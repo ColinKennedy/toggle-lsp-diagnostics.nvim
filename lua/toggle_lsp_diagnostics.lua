@@ -25,6 +25,8 @@ do
 end
 
 local SETTABLE = { 'underline', 'virtual_text', 'signs', 'update_in_insert' }
+_ENABLE_DIAGNOSTICS = "_enable_buffer_diagnostics"
+
 
 function M.init(user_settings)
   local user_settings = user_settings or {}
@@ -62,6 +64,32 @@ function M.turn_off_diagnostics()
   M.settings.all = false
 end
 
+function M.turn_off_buffer_diagnostics()
+
+  function M.allow_buffer_diagnostics(buffer_number, client_id)
+    status, value = pcall(function()
+        return vim.api.nvim_buf_get_var(buffer_number, _ENABLE_DIAGNOSTICS)
+    end)
+
+    if status
+    then
+      return value
+    end
+
+    return true
+  end
+
+  vim.api.nvim_buf_set_var(0, _ENABLE_DIAGNOSTICS, false)
+
+  M.configure_diagnostics {
+    underline = M.allow_buffer_diagnostics,
+    virtual_text = M.allow_buffer_diagnostics,
+    signs = M.allow_buffer_diagnostics,
+    update_in_insert = M.allow_buffer_diagnostics,
+  }
+  M.settings.all = M.allow_buffer_diagnostics
+end
+
 function M.turn_on_diagnostics_default()
   local settings = {}
   for _, setting in ipairs(SETTABLE) do
@@ -72,7 +100,21 @@ function M.turn_on_diagnostics_default()
   vim.api.nvim_echo({ { 'all diagnostics are at default' } }, false, {})
 end
 
+function M.turn_on_buffer_diagnostics()
+  vim.api.nvim_buf_set_var(0, _ENABLE_DIAGNOSTICS, true)
+
+  M.configure_diagnostics {
+    underline = true,
+    virtual_text = true,
+    signs = true,
+    update_in_insert = true,
+  }
+  M.settings.all = true
+end
+
 function M.turn_on_diagnostics()
+  vim.api.nvim_buf_set_var(0, _ENABLE_DIAGNOSTICS, true)
+
   M.configure_diagnostics {
     underline = true,
     virtual_text = true,
